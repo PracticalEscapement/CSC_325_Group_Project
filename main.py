@@ -1,7 +1,22 @@
-from website import create_app
+from flask import Flask,jsonify
+app = Flask(__name__)
 
+@app.route("/")
+def index():
+    return {"PageName":"index"}
 
-app = create_app()
+@app.route("/login")
+def login():
+    return {"PageName":"login"}
 
-if __name__ == '__main__':
-    app.run(debug=True)     #set it to False when run it in prodaction
+@app.route("/signup")
+def signup():
+    return {"PageName":"signup"}
+
+@app.route("/user/<user_id>")
+def user(user_id):
+    return {"PageName":f"user {user_id}"}
+
+if __name__ =="__main__":
+    app.run(debug=True)
+
