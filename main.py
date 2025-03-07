@@ -9,7 +9,6 @@ db =SQLAlchemy(app)
 app.config['SQLALCHEMY_DATABASE_URI']= 'sqlite:///database.db'
 app.config['SECRET_KEY']='thisisakey'
 
-# comment
 
 
 if __name__ == '__main__':
