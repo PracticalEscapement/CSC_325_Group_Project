@@ -42,7 +42,7 @@ def sign_up():
 
         email_exists =user.query.filter_by(email=email).first()
 
- 
+        
         if email_exists:
             flash("Email already exists.", category='error')
         elif password1!=password2:
