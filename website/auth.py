@@ -32,7 +32,6 @@ def logout():
 
 @auth.route('/sign-up', methods=['POST','GET'])
 def sign_up():
-    
     if request.method =="POST":
         email = request.form.get("email")
         Fname = request.form.get("firstName")
@@ -42,13 +41,13 @@ def sign_up():
 
         email_exists =user.query.filter_by(email=email).first()
 
-        
+
         if email_exists:
             flash("Email already exists.", category='error')
         elif password1!=password2:
             flash("Passwords dont match.",  category = 'error')
         else:
-            new_User= user(email = email,username =Fname +" " +Lname, password=password1)
+            new_User= user(id =12345,email = email,username =Fname +" " +Lname, password=password1)
             db.session.add(new_User)
             db.session.commit()
             
