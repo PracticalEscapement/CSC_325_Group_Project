@@ -1,1 +1,1 @@
-    id =db.Column(db.Integer,primary_key=True)
+id =db.Column(db.Integer,primary_key=True)
