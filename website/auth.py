@@ -1,15 +1,31 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session
+from flask import current_app
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session,jsonify,make_response
 from . import db
 from .models import User
 from flask_login import login_user,logout_user,login_required,current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
 import re
-
+import jwt
+import datetime
+from functools import wraps
 
 auth = Blueprint('auth', __name__)
 auth.permanent_session_lifetime=timedelta(days=365*10)
 
+
+def token_required(func):
+    @wraps(func)
+    def decorated(*args,**kwargs):
+        token = request.args.get('token')
+        if not token:
+            return jsonify({'Alert!':'Token is missing'}),403
+        try:
+            decoded_token = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+        except: 
+            return jsonify({'message':'token is invalid'}),401
+        return func(*args,**kwargs)
+    return decorated
 # --- Login Route ---
 @auth.route('/login', methods =['GET','POST'])
 def login():
@@ -28,10 +44,16 @@ def login():
             if check_password_hash(user.password, password):
                 login_user(user, remember=True)
                 session["user"]=email
+                token= jwt.encode({
+                    'user':request.form['email'],
+                    'exp' :datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
+                },current_app.config['SECRET_KEY'])
+                if isinstance(token, str):
+                    token = token.encode('UTF-8')
                 flash(f"Logged in successfully. Your user ID is: {user.id}", category='success')
-                return redirect(url_for('views.home'))
+                return jsonify({'token': token.decode('UTF-8')})
             else:
-                flash("WroIncorrectng password",category='error')
+                flash("Wrong Incorrect password",category='error')
             
         else:
             flash('Email doesnt exists.', category='error')
@@ -47,9 +69,10 @@ def logout():
     flash(f"You have been logged out, {user if user else 'user'}.", category='info')
     return redirect(url_for('views.home'))
 
-
+#take out @token_required when posts are implemented it is only meant for testing purposes only
 # --- Sign Up Route ---
 @auth.route('/sign-up', methods=['POST','GET'])
+@token_required
 def sign_up():
     if request.method == "POST":
         email = request.form.get("email")
@@ -83,5 +106,3 @@ def sign_up():
             return redirect(url_for('views.home'))
 
     return render_template("sign_up.html")
-
-    
