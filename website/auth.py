@@ -59,10 +59,11 @@ def login():
             flash('Email doesnt exists.', category='error')
     return render_template("login.html")
 # Info page for testing purposes only should be removed
-@auth.route('/info')
-def info():
-    email= User.query.get_or_404(1)
-    return jsonify(f"ID: {email.email}")
+@auth.route('/<user_id>')
+@token_required
+def info(user_id):
+    user= User.query.get_or_404(user_id)
+    return jsonify(f"ID: {user.id}")
 
 # --- Logout Route ---
 @auth.route('/logout')
@@ -73,10 +74,9 @@ def logout():
     flash(f"You have been logged out, {user if user else 'user'}.", category='info')
     return redirect(url_for('views.home'))
 
-#take out @token_required when posts are implemented it is only meant for testing purposes only
+
 # --- Sign Up Route ---
 @auth.route('/sign-up', methods=['POST','GET'])
-@token_required
 def sign_up():
     if request.method == "POST":
         email = request.form.get("email")
