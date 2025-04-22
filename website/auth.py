@@ -1,7 +1,7 @@
 from flask import current_app
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session,jsonify,make_response
 from . import db
-from .models import User
+from .models import *
 from flask_login import login_user,logout_user,login_required,current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
@@ -58,7 +58,11 @@ def login():
         else:
             flash('Email doesnt exists.', category='error')
     return render_template("login.html")
-
+# Info page for testing purposes only should be removed
+@auth.route('/info')
+def info():
+    email= User.query.get_or_404(1)
+    return jsonify(f"ID: {email.email}")
 
 # --- Logout Route ---
 @auth.route('/logout')

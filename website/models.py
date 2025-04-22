@@ -1,5 +1,6 @@
 from . import db
 from flask_login import UserMixin
+from flask import jsonify
 from sqlalchemy.sql import func
 
 #---User-related:
@@ -86,8 +87,70 @@ class PostHasTag(db.Model):
     tag_name = db.Column(db.String(100), db.ForeignKey('tag.name'), primary_key=True)
     post = db.relationship('Post', backref='post_tags')
     tag = db.relationship('Tag', backref='tag_posts')
+#Methods data still needs to be implemented
+def get_notifications(user_id):
+    Notifs=Notification.query.filter_by(belongs_to_user_id=user_id).all()
+    data_list=[]
+    for user in users:
+        data={
+            "id": user.belongs_to_user_id
 
+        }
+        data_list.append(data)
+    return jsonify(data_list)
 
+def get_all_users():
+    users=User.query.all()
+    data_list=[]
+    for user in users:
+        data={
+            "id": user.id,
+            "email": user.email
+        }
+        data_list.append(data)
+    return data_list
+def get_messages(receiver_id):
+    mes=Message.query.filter_by(receiver_id=receiver_id).all()
+    data_list=[]
+    for user in users:
+        data={
+            "id": user.id
+        }
+        data_list.append(data)
+    return jsonify(data_list)
+def get_comments(post_id):
+    com=Comment.query.filter_by(post_id=post_id).all()
+    data_list=[]
+    for user in users:
+        data={
+            "id": user.id
+        }
+        data_list.append(data)
+    return jsonify(data_list)
 
+def get_memebers(community_name):
+    commun=Community.query.filter_by(community_name=community_name).all()
+    data_list=[]
+    for user in users:
+        data={
+            "member": member_id
+        }
+        data_list.append(data)
+    return jsonify(data_list)
+def get_all_posts(user_id):
+    Numpost = Post.query.filter_by(author_id=user_id).all()
+    post_list = []
+    for post in Numpost:
+        post_data = {
+            'id': post.id,
+            'title': post.title,
+            'content': post.content,
+            'author_id': post.author_id,
+            'author_username': post.author.username,  
+            'com_name': post.com_name,
+            'created_at': post.created_at
+        }
+        post_list.append(post_data)
+    return jsonify(post_list)
 
 
