@@ -27,11 +27,11 @@ def token_required(func):
         return func(*args,**kwargs)
     return decorated
 # --- Login Route ---
-@auth.route('/login', methods =['GET','POST'])
+@auth.route('/login', methods =['POST'])
 def login():
     if current_user.is_authenticated:
         flash("Already Logged in","info")
-        return redirect(url_for('views.home'))
+        return jsonify({"response":"Already Logged in"})
     if request.method=='POST':
         session.permanent=True
         email = request.form.get('email')
@@ -39,11 +39,11 @@ def login():
         password = request.form.get('password')
         user = User.query.filter_by(email=email).first()
 
-
+       
         if user:
             if check_password_hash(user.password, password):
                 login_user(user, remember=True)
-                session["user"]=email
+                session["user"]=user.username
                 token= jwt.encode({
                     'user':request.form['email'],
                     'exp' :datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
@@ -54,29 +54,30 @@ def login():
                 return jsonify({'token': token.decode('UTF-8')})
             else:
                 flash("Wrong Incorrect password",category='error')
+                return jsonify({"response":"Wrong Incorrect password"})
             
         else:
             flash('Email doesnt exists.', category='error')
-    return render_template("login.html")
-# Info page for testing purposes only should be removed
+            return jsonify({"response":"Email doesnt exists."})
+    
+
 @auth.route('/<user_id>')
-@token_required
 def info(user_id):
     user= User.query.get_or_404(user_id)
     return jsonify(f"ID: {user.id}")
 
 # --- Logout Route ---
-@auth.route('/logout')
+@auth.route('/logout',methods =['GET'])
 @login_required
 def logout():
     logout_user()
     user = session.pop("user", None)
     flash(f"You have been logged out, {user if user else 'user'}.", category='info')
-    return redirect(url_for('views.home'))
+    return jsonify({"response":f"You have been logged out, {user if user else 'user'}."})
 
 
 # --- Sign Up Route ---
-@auth.route('/sign-up', methods=['POST','GET'])
+@auth.route('/sign-up', methods=['POST'])
 def sign_up():
     if request.method == "POST":
         email = request.form.get("email")
@@ -89,24 +90,23 @@ def sign_up():
         email_pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
         if not re.match(email_pattern, email):
             flash("Invalid email address.", category='error')
-            return render_template("sign_up.html")
-
+            return jsonify({"response":"Invalid email address."})
         email_exists = User.query.filter_by(email=email).first()
 
         if email_exists:
             flash("Email already exists.", category='error')
+            return jsonify({"response":"Email already exists."})
         elif password1 != password2:
             flash("Passwords don't match.", category='error')
+            return jsonify({"response":"Passwords don't match."})
         else:
             new_user = User(
                 email=email,
-                username = f"{Fname} {Lname}".strip(),
+                username = f"{Fname}{Lname}".strip(),
                 password=generate_password_hash(password1)
             )
             db.session.add(new_user)
             db.session.commit()
 
             flash("User created successfully!", category='success')
-            return redirect(url_for('views.home'))
-
-    return render_template("sign_up.html")
+            return jsonify({"response":"User created successfully!"})
