@@ -40,6 +40,8 @@ class Message(db.Model):
 #---Community-related
 class Community(db.Model):
     name = db.Column(db.String(200), primary_key=True)
+    description = db.Column(db.Text, nullable=True)
+    image_url = db.Column(db.String(255), nullable=True)  # Optional field for community image
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=func.now())
     num_members = db.Column(db.Integer)
@@ -62,7 +64,7 @@ class Post(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), default=func.now())
     comments = db.relationship('Comment', backref='post', cascade="all, delete")
     likes = db.relationship('Like', backref='post', cascade="all, delete")
-    posts_has_tags = db.relationship('PostHasTag')
+    posts_has_tags = db.relationship('PostHasTag', backref='post_associations', overlaps="tags")
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -81,12 +83,12 @@ class Like(db.Model):
 #---Tags
 class Tag(db.Model):
     name = db.Column(db.String(100), primary_key=True)
-    posts = db.relationship('Post', secondary='post_has_tag', backref='tags')
+    posts = db.relationship('Post', secondary='post_has_tag', backref='tags', overlaps="post_tag_links")
 
 class PostHasTag(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
     tag_name = db.Column(db.String(100), db.ForeignKey('tag.name'), primary_key=True)
-    post = db.relationship('Post', backref='post_tags')
+    post = db.relationship('Post', backref='post_tag_links', overlaps="posts_has_tags")
     tag = db.relationship('Tag', backref='tag_posts')
 #Methods data still needs to be implemented
 
@@ -188,18 +190,23 @@ def get_all_comminities():
         data_list.append(data)
     return jsonify(data_list)
 def get_user_community(user_id):
-    mems=Member.query.filter_by(user_id=name).all()
+    mems=Member.query.filter_by(user_id=user_id).all()
     data_list=[]
 
-    data={
-        "name":community.name,
-        "author_id":community.author_id,
-        "created_at":community.created_at,
-        "num_memebers":community.num_memebers,
-        "author":community.author,
-        "posts":community.posts,
-    }
-    data_list.append(data)
+    for membership in mems:
+        community = Community.query.filter_by(name=membership.community_name).first()
+        if community:
+            data={
+                "name":community.name,
+                "description":community.description,
+                "image_url":community.image_url,
+                "author_id":community.author_id,
+                "created_at":community.created_at,
+                "num_memebers":community.num_memebers,
+                "author":community.author,
+                "posts":community.posts,
+            }
+        data_list.append(data)
     return jsonify(data_list)
 
 def get_community(name):
