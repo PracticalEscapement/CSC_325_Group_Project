@@ -14,6 +14,7 @@ auth = Blueprint('auth', __name__)
 auth.permanent_session_lifetime=timedelta(days=365*10)
 
 
+
 def token_required(func):
     @wraps(func)
     def decorated(*args,**kwargs):
@@ -26,17 +27,45 @@ def token_required(func):
             return jsonify({'message':'token is invalid'}),401
         return func(*args,**kwargs)
     return decorated
+
+@auth.route('api/is_logged_in', methods=['GET'])
+def is_logged_in():
+    """
+    Check if the user is logged in.
+    """
+    print("Authentification request!")
+    if current_user.is_authenticated:
+        print("Succeed")
+        return jsonify({
+            "logged_in": True,
+            "user_id": current_user.id,
+            "username": current_user.username
+        }), 200
+    else:
+        print("Failed")
+        return jsonify({"is_logged_in": False}), 200
+
 # --- Login Route ---
-@auth.route('/login', methods =['POST'])
+@auth.route('api/login', methods =['POST'])
 def login():
     if current_user.is_authenticated:
         flash("Already Logged in","info")
-        return jsonify({"response":"Already Logged in"})
+        return jsonify({"response":"Already Logged in"}), 200
+    
     if request.method=='POST':
         session.permanent=True
-        email = request.form.get('email')
+
+        # Parse JSON data from the request body
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
         
-        password = request.form.get('password')
+        email = data.get('email')
+        password = data.get('password')
+
+        print('Email', email)
+        print("Password:", password)
+        
         user = User.query.filter_by(email=email).first()
 
        
@@ -45,20 +74,31 @@ def login():
                 login_user(user, remember=True)
                 session["user"]=user.username
                 token= jwt.encode({
-                    'user':request.form['email'],
+                    'user':email,
                     'exp' :datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
                 },current_app.config['SECRET_KEY'])
+
+
                 if isinstance(token, str):
                     token = token.encode('UTF-8')
-                flash(f"Logged in successfully. Your user ID is: {user.id}", category='success')
-                return jsonify({'token': token.decode('UTF-8')})
+
+                response = make_response(jsonify({"message": "Login successful"}), 200)
+                response.set_cookie(
+                    'token', # Cookie name
+                    token.decode('UTF-8'), # Token value
+                    httponly=True,  # Prevent JavaScript access to the cookie
+                    secure=False,  # Set to True if using HTTPS
+                    samesite='Lax'  # Restrict cross-site cookie sharing
+                )
+                #print()
+                return response
             else:
-                flash("Wrong Incorrect password",category='error')
-                return jsonify({"response":"Wrong Incorrect password"})
+                print('Invalid username or password')
+                return jsonify({"error":"Invalid username or password"}), 401
             
         else:
-            flash('Email doesnt exists.', category='error')
-            return jsonify({"response":"Email doesnt exists."})
+            print('Email does not exist')
+            return jsonify({"response": "Email does not exist", "status": "error"}), 401
     
 
 @auth.route('/<user_id>')

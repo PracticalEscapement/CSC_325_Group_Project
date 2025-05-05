@@ -13,8 +13,12 @@ def create_app():
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI']= f'sqlite:///{DB_NAME}'
     app.config['SECRET_KEY'] = 'ok30vXjg5n'
+    app.config['SESSION_TYPE'] = 'filesystem'
+
+
     db.init_app(app)
     migrate = Migrate(app, db)
+
 
     from .views import views
     from .auth import auth
@@ -30,9 +34,11 @@ def create_app():
     login_manager.init_app(app)
 
     @login_manager.user_loader
-    def load_user(id):
-        return User.query.get(int(id))
-
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+    
+    from .routers import community_routes
+    app.register_blueprint(community_routes)
 
 
     return app
