@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, make_response
 from website.models import *
 from website.auth import token_required  # Import token_required from the appropriate module
 
@@ -59,13 +59,26 @@ def fetch_all_communities():
     return get_all_comminities()
 
 # Fatching current user's communities
+# Handle preflight requests for CORS
+@community_routes.route('/api/communities/<int:user_id>', methods=['OPTIONS'])
+def fetch_user_communities_preflight(user_id):
+     # Handle preflight request
+    response = make_response()
+    response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET, OPTIONS")
+    return response, 200
+
+# Handle GET requests for fetching user communities
 @community_routes.route('/api/communities/<int:user_id>', methods=['GET'])
 @token_required
-def fetch_user_communities_logged_in(decoded_token):
+def fetch_user_communities_logged_in(decoded_token, user_id):
     """
     API route to fetch communities for the currently logged-in user.
     """
-    user_id = decoded_token.get('user_id')  # Get the user ID from the token
+    token_user_id = decoded_token.get('user_id')  # Get the user ID from the token
+    if token_user_id != user_id:
+        return jsonify({"error": "Unauthorized access"}), 403
     return get_user_community(user_id)
 
 # Fatching popular communities
