@@ -2,7 +2,6 @@ from flask import current_app
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session,jsonify,make_response
 from . import db
 from .models import *
-from flask_login import login_user,logout_user,login_required,current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
 import re
@@ -18,87 +17,84 @@ auth.permanent_session_lifetime=timedelta(days=365*10)
 def token_required(func):
     @wraps(func)
     def decorated(*args,**kwargs):
-        token = request.args.get('token')
+        token = request.headers.get('Authorization')        # Retrieve token from Authorization header
         if not token:
             return jsonify({'Alert!':'Token is missing'}),403
+        
+        # Handle "Bearer <token>" format
+        if token.startswith("Bearer "):
+            token = token.split(" ")[1]  # Extract the actual token
+
         try:
             decoded_token = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-        except: 
-            return jsonify({'message':'token is invalid'}),401
-        return func(*args,**kwargs)
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token has expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'message': 'Token is invalid'}), 401
+        return func(decoded_token, *args,**kwargs)
     return decorated
 
 @auth.route('api/is_logged_in', methods=['GET'])
-def is_logged_in():
+@token_required
+def is_logged_in(decoded_token):
     """
     Check if the user is logged in.
     """
     print("Authentification request!")
-    if current_user.is_authenticated:
+
+    user_id = decoded_token.get('user_id')
+    user = User.query.get(user_id)
+    if user:
         print("Succeed")
+        print(user.username)
         return jsonify({
             "logged_in": True,
-            "user_id": current_user.id,
-            "username": current_user.username
+            "user_id": user_id,
+            "username": user.username
         }), 200
     else:
         print("Failed")
         return jsonify({"is_logged_in": False}), 200
 
 # --- Login Route ---
-@auth.route('api/login', methods =['POST'])
+@auth.route('api/login', methods =['POST', 'OPTIONS'])
 def login():
-    if current_user.is_authenticated:
-        flash("Already Logged in","info")
-        return jsonify({"response":"Already Logged in"}), 200
-    
-    if request.method=='POST':
-        session.permanent=True
+    if request.method == 'OPTIONS':
+        # Handle preflight request
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
 
-        # Parse JSON data from the request body
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No data provided"}), 400
-        
-        email = data.get('email')
-        password = data.get('password')
+    # Parse JSON data from the request body
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
 
-        print('Email', email)
-        print("Password:", password)
         
-        user = User.query.filter_by(email=email).first()
+    email = data.get('email')
+    password = data.get('password')
+
+    print('Email', email)
+    print("Password:", password)
+        
+    user = User.query.filter_by(email=email).first()
 
        
-        if user:
-            if check_password_hash(user.password, password):
-                login_user(user, remember=True)
-                session["user"]=user.username
-                token= jwt.encode({
-                    'user':email,
-                    'exp' :datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
-                },current_app.config['SECRET_KEY'])
+    if user and check_password_hash(user.password, password):
+        # Generate JWT token
+        token = jwt.encode({
+            'user_id': user.id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=200)  # Token expires in 1 hour
+        }, current_app.config['SECRET_KEY'], algorithm="HS256")
 
-
-                if isinstance(token, str):
-                    token = token.encode('UTF-8')
-
-                response = make_response(jsonify({"message": "Login successful"}), 200)
-                response.set_cookie(
-                    'token', # Cookie name
-                    token.decode('UTF-8'), # Token value
-                    httponly=True,  # Prevent JavaScript access to the cookie
-                    secure=False,  # Set to True if using HTTPS
-                    samesite='Lax'  # Restrict cross-site cookie sharing
-                )
-                #print()
-                return response
-            else:
-                print('Invalid username or password')
-                return jsonify({"error":"Invalid username or password"}), 401
-            
-        else:
-            print('Email does not exist')
-            return jsonify({"response": "Email does not exist", "status": "error"}), 401
+        return jsonify({
+            "message": "Login successful",
+            "token": token
+        }), 200
+    else:
+        return jsonify({"error": "Invalid email or password"}), 401
     
 
 @auth.route('/<user_id>')
@@ -107,13 +103,13 @@ def info(user_id):
     return jsonify(f"ID: {user.id}")
 
 # --- Logout Route ---
-@auth.route('/logout',methods =['GET'])
-@login_required
-def logout():
-    logout_user()
-    user = session.pop("user", None)
-    flash(f"You have been logged out, {user if user else 'user'}.", category='info')
-    return jsonify({"response":f"You have been logged out, {user if user else 'user'}."})
+# @auth.route('/logout',methods =['GET'])
+# @token_required
+# def logout():
+#     logout_user()
+#     user = session.pop("user", None)
+#     flash(f"You have been logged out, {user if user else 'user'}.", category='info')
+#     return jsonify({"response":f"You have been logged out, {user if user else 'user'}."})
 
 
 # --- Sign Up Route ---

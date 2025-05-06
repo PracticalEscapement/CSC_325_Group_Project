@@ -1,13 +1,13 @@
 from flask import Blueprint, jsonify, request
 from website.models import *
-from flask_login import current_user, login_required
+from website.auth import token_required  # Import token_required from the appropriate module
 
 community_routes = Blueprint('community_routes', __name__)
 
 # Adding a community
 @community_routes.route('/api/communities', methods=['POST'])
-@login_required
-def add_community():
+@token_required
+def add_community(decoded_token):
     """
     API route to add a new community.
     """
@@ -28,12 +28,15 @@ def add_community():
     if existing_community:
         return jsonify({"error": "Community with this name already exists"}), 400
 
+    # Get the user ID from the decoded token
+    user_id = decoded_token.get('user_id')
+
     # Create a new community
     new_community = Community(
         name=name,
         description=description,
         image_url=image_url,
-        author_id=current_user.id  # Set the current user as the author
+        author_id=user_id  # Set the current user as the author
     )
 
     # Add to the database
@@ -57,12 +60,13 @@ def fetch_all_communities():
 
 # Fatching current user's communities
 @community_routes.route('/api/communities/<int:user_id>', methods=['GET'])
-@login_required
-def fetch_user_communities_logged_in():
+@token_required
+def fetch_user_communities_logged_in(decoded_token):
     """
     API route to fetch communities for the currently logged-in user.
     """
-    return get_user_community(current_user.id)
+    user_id = decoded_token.get('user_id')  # Get the user ID from the token
+    return get_user_community(user_id)
 
 # Fatching popular communities
 @community_routes.route('/api/communities/popular', methods=['GET'])
