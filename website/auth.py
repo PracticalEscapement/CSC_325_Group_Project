@@ -9,7 +9,7 @@ import re
 import jwt
 import datetime
 from functools import wraps
-
+from .models import *
 auth = Blueprint('auth', __name__)
 auth.permanent_session_lifetime=timedelta(days=365*10)
 
@@ -38,7 +38,6 @@ def login():
         
         password = request.form.get('password')
         user = User.query.filter_by(email=email).first()
-
        
         if user:
             if check_password_hash(user.password, password):
@@ -61,11 +60,13 @@ def login():
             return jsonify({"response":"Email doesnt exists."})
     
 
-@auth.route('/<user_id>')
+@auth.route('/user/<user_id>')
+@token_required
 def info(user_id):
-    user= User.query.get_or_404(user_id)
-    return jsonify(f"ID: {user.id}")
-
+    if current_user.is_authenticated:
+        return get_user(user_id)
+    else:
+        return jsonify({"response":"Not Logged in"})
 # --- Logout Route ---
 @auth.route('/logout',methods =['GET'])
 @login_required
@@ -74,7 +75,9 @@ def logout():
     user = session.pop("user", None)
     flash(f"You have been logged out, {user if user else 'user'}.", category='info')
     return jsonify({"response":f"You have been logged out, {user if user else 'user'}."})
+    
 
+    
 
 # --- Sign Up Route ---
 @auth.route('/sign-up', methods=['POST'])
