@@ -114,21 +114,25 @@ def info(user_id):
 
 
 # --- Sign Up Route ---
-@auth.route('/sign-up', methods=['POST'])
+@auth.route('/api/register', methods=['POST'])
 def sign_up():
+    print("Content-Type:", request.headers.get('Content-Type'))
+    print("Request Data:", request.data)
+
     data = request.get_json()
+    print("Parsed JSON Data:", data)
 
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
+
+    f_name = data.get('f_name', '').strip()
+    l_name = data.get('l_name', '').strip()
     email = data.get("email", '').strip()
-    f_name = data.get('first-name', '').strip()
-    l_name = data.get('last-name', '').strip()
-    password1 = data.get("password", '').strip()
-    password2 = data.get("confirmPassword", '').strip()
+    password = data.get("password", '').strip()
 
     # Validate required fields
-    if not email or not f_name or not l_name or not password1 or not password2:
+    if not email or not f_name or not l_name or not password:
         return jsonify({"error": "All fields are required."}), 400
 
     # Email format validation
@@ -142,15 +146,11 @@ def sign_up():
     if email_exists:
         return jsonify({"error":"Email already exists."})
     
-     # Check if passwords match
-    if password1 != password2:
-        return jsonify({"error":"Passwords don't match."})
-    
     try:
         new_user = User(
             email=email,
             username = f"{f_name}{l_name}".strip(),
-            password=generate_password_hash(password1)
+            password=generate_password_hash(password)
         )
         db.session.add(new_user)
         db.session.commit()
