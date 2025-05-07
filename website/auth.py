@@ -27,6 +27,7 @@ def token_required(func):
 
         try:
             decoded_token = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+            user_id = decoded_token.get('user_id')
         except jwt.ExpiredSignatureError:
             return jsonify({'message': 'Token has expired'}), 401
         except jwt.InvalidTokenError:
@@ -115,34 +116,45 @@ def info(user_id):
 # --- Sign Up Route ---
 @auth.route('/sign-up', methods=['POST'])
 def sign_up():
-    if request.method == "POST":
-        email = request.form.get("email")
-        Fname = request.form.get("firstName", "").strip()
-        Lname = request.form.get("lastName", "").strip()
-        password1 = request.form.get("password1")
-        password2 = request.form.get("password2")
+    data = request.get_json()
 
-        # Email format validation
-        email_pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-        if not re.match(email_pattern, email):
-            flash("Invalid email address.", category='error')
-            return jsonify({"response":"Invalid email address."})
-        email_exists = User.query.filter_by(email=email).first()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
 
-        if email_exists:
-            flash("Email already exists.", category='error')
-            return jsonify({"response":"Email already exists."})
-        elif password1 != password2:
-            flash("Passwords don't match.", category='error')
-            return jsonify({"response":"Passwords don't match."})
-        else:
-            new_user = User(
-                email=email,
-                username = f"{Fname}{Lname}".strip(),
-                password=generate_password_hash(password1)
-            )
-            db.session.add(new_user)
-            db.session.commit()
+    email = data.get("email", '').strip()
+    f_name = data.get('first-name', '').strip()
+    l_name = data.get('last-name', '').strip()
+    password1 = data.get("password", '').strip()
+    password2 = data.get("confirmPassword", '').strip()
 
-            flash("User created successfully!", category='success')
-            return jsonify({"response":"User created successfully!"})
+    # Validate required fields
+    if not email or not f_name or not l_name or not password1 or not password2:
+        return jsonify({"error": "All fields are required."}), 400
+
+    # Email format validation
+    email_pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+    if not re.match(email_pattern, email):
+        flash("Invalid email address.", category='error')
+        return jsonify({"error":"Invalid email address."}), 400
+    
+    # Check if email already exists
+    email_exists = User.query.filter_by(email=email).first()
+    if email_exists:
+        return jsonify({"error":"Email already exists."})
+    
+     # Check if passwords match
+    if password1 != password2:
+        return jsonify({"error":"Passwords don't match."})
+    
+    try:
+        new_user = User(
+            email=email,
+            username = f"{f_name}{l_name}".strip(),
+            password=generate_password_hash(password1)
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({"message": "User created successfully!"}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "An error occurred while creating the user.", "details": str(e)}), 500
