@@ -13,7 +13,7 @@ import os
 
 app = create_app()
 
-CORS(app, supports_credentials=True, origins=["http://localhost:3000"])   # Allow cross-origin requests with credentials
+CORS(app, supports_credentials=True, origins=["http://localhost:3000", "https://reddit-clone-frontend-p4hwidw9d-practicalescapements-projects.vercel.app/"])   # Allow cross-origin requests with credentials
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 
