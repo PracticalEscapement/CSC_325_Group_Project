@@ -61,11 +61,15 @@ def fetch_all_communities():
 # Fatching current user's communities
 @community_routes.route('/api/communities/<int:user_id>', methods=['GET'])
 @token_required
-def fetch_user_communities_logged_in(decoded_token):
+def fetch_user_communities_logged_in(decoded_token, user_id):
     """
     API route to fetch communities for the currently logged-in user.
     """
-    user_id = decoded_token.get('user_id')  # Get the user ID from the token
+    # Ensure the user_id from the URL matches the user_id from the token
+    if decoded_token.get('user_id') != user_id:
+        return jsonify({"error": "Unauthorized access"}), 403
+    
+    # Fetch communities for the user
     return get_user_community(user_id)
 
 # Fatching popular communities

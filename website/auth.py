@@ -27,6 +27,7 @@ def token_required(func):
 
         try:
             decoded_token = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+            user_id = decoded_token.get('user_id')
         except jwt.ExpiredSignatureError:
             return jsonify({'message': 'Token has expired'}), 401
         except jwt.InvalidTokenError:

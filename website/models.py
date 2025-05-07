@@ -190,23 +190,27 @@ def get_all_comminities():
         data_list.append(data)
     return jsonify(data_list)
 def get_user_community(user_id):
-    mems=Member.query.filter_by(user_id=user_id).all()
-    data_list=[]
+    # Query the Member table to get all memberships for the user
+    memberships = Member.query.filter_by(member_id=user_id).all()
+    data_list = []
 
-    for membership in mems:
+    print("Memberships:", memberships)
+    for membership in memberships:
+        # Use the community_name from the Member table to fetch the Community
         community = Community.query.filter_by(name=membership.community_name).first()
         if community:
-            data={
-                "name":community.name,
-                "description":community.description,
-                "image_url":community.image_url,
-                "author_id":community.author_id,
-                "created_at":community.created_at,
-                "num_memebers":community.num_memebers,
-                "author":community.author,
-                "posts":community.posts,
+            data = {
+                "name": community.name,
+                "description": community.description,
+                "image_url": community.image_url,
+                "author_id": community.author_id,
+                "created_at": community.created_at,
+                "num_members": community.num_members,
+                "author": community.author.username,  # Assuming you want the author's username
+                "posts": [post.title for post in community.posts],  # Example: list of post titles
             }
-        data_list.append(data)
+            data_list.append(data)
+
     return jsonify(data_list)
 
 def get_community(name):
@@ -225,12 +229,12 @@ def get_community(name):
     return jsonify(data_list)
 
 def get_memebers(community_name):
-    member=Member.query.filter_by(name=community_name).all()
+    members=Member.query.filter_by(name=community_name).all()
     data_list=[]
-    for memebrs in memeber:
+    for membr in members:
         data={
-            "member": memebers.member_id,
-            "community":members.community_name
+            "member": membr.member_id,
+            "community":membr.community_name
             
         }
         data_list.append(data)
@@ -248,7 +252,7 @@ def get_user_posts(user_id):
             'content': post.content,
             'created_at':post.created_at,
             'comments':post.comments,
-            'likes':posts.like,
+            'likes':post.like,
             'has_tags': post.posts_has_tags
         }
         post_list.append(post_data)
