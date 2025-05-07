@@ -76,9 +76,11 @@ def fetch_user_communities_logged_in(decoded_token, user_id):
     """
     API route to fetch communities for the currently logged-in user.
     """
-    token_user_id = decoded_token.get('user_id')  # Get the user ID from the token
-    if token_user_id != user_id:
+    # Ensure the user_id from the URL matches the user_id from the token
+    if decoded_token.get('user_id') != user_id:
         return jsonify({"error": "Unauthorized access"}), 403
+    
+    # Fetch communities for the user
     return get_user_community(user_id)
 
 # Fatching popular communities
