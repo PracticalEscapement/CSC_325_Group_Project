@@ -109,6 +109,41 @@ def get_user(user_id):
         }
         data_list.append(data)
     return jsonify(data_list)
+def get_community_posts(com_name):
+    Com_posts = Post.query.filter_by(com_name=com_name).all()
+    post_list = []
+    for post in Com_posts:
+        post_data = {
+            'id': post.id,
+            'author_id': post.author_id,
+            'com_name': post.com_name,
+            'title': post.title,
+            'content': post.content,
+            'created_at':post.created_at,
+            'comments':post.comments,
+            'likes':post.like,
+            'has_tags': post.posts_has_tags
+        }
+        post_list.append(post_data)
+    return jsonify(post_list)
+
+def get_posts(Post_id):
+    Com_posts = Post.query.filter_by(id=Post_id).all()
+    post_list = []
+    for post in Com_posts:
+        post_data = {
+            'id': post.id,
+            'author_id': post.author_id,
+            'com_name': post.com_name,
+            'title': post.title,
+            'content': post.content,
+            'created_at':post.created_at,
+            'comments':post.comments,
+            'likes':post.like,
+            'has_tags': post.posts_has_tags
+        }
+        post_list.append(post_data)
+    return jsonify(post_list)
 
 def get_notifications(user_id):
     Notifs=Notification.query.filter_by(belongs_to_user_id=user_id).all()
@@ -184,8 +219,10 @@ def get_all_comminities():
             "author_id":communities.author_id,
             "created_at":communities.created_at,
             "num_memebers":communities.num_memebers,
-            "author":communities.author
-
+            "Description":communities.description,
+            "img_url":communities.img_url,
+            "author":communities.author,
+            "posts":communities.posts,
         }
         data_list.append(data)
     return jsonify(data_list)
@@ -222,6 +259,8 @@ def get_community(name):
         "author_id":community.author_id,
         "created_at":community.created_at,
         "num_memebers":community.num_memebers,
+        "Description":community.description,
+        "img_url":community.img_url,
         "author":community.author,
         "posts":community.posts,
     }
