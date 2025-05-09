@@ -31,9 +31,20 @@ def create_app():
     from .models import User
 
     create_database(app)
+
+    from .Routes.Comments import comments_routes
+    from .Routes.Communities import community_routes
+    from .Routes.messages import Messages_routes
+    from .Routes.Notifications import Notifications_routes
+    from .Routes.Users import Users_routes
+    from .Routes.Posts import Posts_routes
     
-    from .routers import community_routes
+    app.register_blueprint(comments_routes)
     app.register_blueprint(community_routes)
+    app.register_blueprint(Messages_routes)
+    app.register_blueprint(Notifications_routes)
+    app.register_blueprint(Users_routes)
+    app.register_blueprint(Posts_routes)
 
 
     return app
