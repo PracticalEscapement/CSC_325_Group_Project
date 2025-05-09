@@ -149,12 +149,21 @@ def sign_up():
     try:
         new_user = User(
             email=email,
-            username = f"{f_name}{l_name}".strip(),
+            username = f"{f_name} {l_name}".strip(),
             password=generate_password_hash(password)
         )
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({"message": "User created successfully!"}), 201
+
+        # Generate a JWT token for the new user
+        token = jwt.encode({
+            'user_id': new_user.id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=200)  # Token expires in 200 days
+        }, current_app.config['SECRET_KEY'], algorithm="HS256")
+
+        return jsonify({"message": "User created successfully!",
+                        "token": token
+                        }), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "An error occurred while creating the user.", "details": str(e)}), 500
