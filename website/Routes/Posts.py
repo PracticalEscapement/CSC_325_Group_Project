@@ -68,7 +68,7 @@ def fetch_Posts(Post_id):
     return get_posts(Post_id)
 
 @Posts_routes.route('/api/Posts/<int:com_name>', methods=['OPTIONS'])
-def fetch_Posts_preflight(user_id):
+def fetch_Posts_preflight(com_name):
      # Handle preflight request
     response = make_response()
     response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
