@@ -38,16 +38,16 @@ def add_community(decoded_token):
         image_url=image_url,
         author_id=user_id  # Set the current user as the author
     )
+    new_community.num_members = (new_community.num_members or 0) + 1
+    db.session.add(new_community)
 
     new_membership = Member(
     member_id=user_id,
     community_name=name
     )
 
-    # Add to the database
-    db.session.add(new_community)
-    db.session.commit()
     db.session.add(new_membership)
+
     db.session.commit()
 
     return jsonify({
