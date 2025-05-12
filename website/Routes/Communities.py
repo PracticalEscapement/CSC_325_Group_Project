@@ -56,7 +56,8 @@ def add_community(decoded_token):
         "community": {
         "name": new_community.name,
         "description": new_community.description,
-        "imageUrl": new_community.image_url,
+        "image_url": new_community.image_url,
+        "num_members" : 1,
         "author_id": new_community.author_id
     }}), 201
 
