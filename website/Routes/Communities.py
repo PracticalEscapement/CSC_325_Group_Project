@@ -36,9 +36,10 @@ def add_community(decoded_token):
         name=name,
         description=description,
         image_url=image_url,
-        author_id=user_id  # Set the current user as the author
+        author_id=user_id,  # Set the current user as the author
+        num_members=1  # Set initial number of members to 1
     )
-    new_community.num_members = (new_community.num_members or 0) + 1
+
     db.session.add(new_community)
 
     new_membership = Member(
@@ -110,3 +111,77 @@ def fetch_popular_communities():
         for community in communities
     ]
     return jsonify(data_list), 200
+
+# Adding a new community member
+@community_routes.route('/api/communities/<string:community_name>/add_member', methods=['POST'])
+@token_required
+def add_member(decoded_token, community_name):
+    """
+    API route to add a member to a community.
+    """
+    user_id = decoded_token.get('user_id')
+
+    # Check if the community exists
+    community = Community.query.filter_by(name=community_name).first()
+    if not community:
+        return jsonify({"error": "Community not found"}), 404
+
+    # Check if the user is already a member
+    existing_member = Member.query.filter_by(member_id=user_id, community_name=community_name).first()
+    if existing_member:
+        return jsonify({"error": "User is already a member of this community"}), 400
+
+    # Add the user as a member
+    new_member = Member(
+        member_id=user_id,
+        community_name=community_name
+    )
+    db.session.add(new_member)
+
+    # Increment the num_members field
+    community.num_members = (community.num_members or 0) + 1
+    db.session.commit()
+
+    return jsonify({"message": "User added to the community successfully"}), 200
+
+# Removing a user from a community
+@community_routes.route('/api/communities/<string:community_name>/remove_member', methods=['DELETE'])
+@token_required
+def remove_member(decoded_token, community_name):
+    """
+    API route to remove a member from a community.
+    """
+    user_id = decoded_token.get('user_id')
+
+    # Check if the community exists
+    community = Community.query.filter_by(name=community_name).first()
+    if not community:
+        return jsonify({"error": "Community not found"}), 404
+
+    # Check if the user is a member
+    member = Member.query.filter_by(member_id=user_id, community_name=community_name).first()
+    if not member:
+        return jsonify({"error": "User is not a member of this community"}), 400
+
+    # Remove the user as a member
+    db.session.delete(member)
+
+    # Decrement the num_members field
+    community.num_members = max((community.num_members or 1) - 1, 0)
+    db.session.commit()
+
+    return jsonify({"message": "User removed from the community successfully"}), 200
+
+# Checks if a user is a member of a community
+@community_routes.route('/api/communities/<string:community_name>/is_member', methods=['GET'])
+@token_required
+def check_membership(decoded_token, community_name):
+    """
+    API route to check if the logged-in user is a member of a specific community.
+    """
+    user_id = decoded_token.get('user_id')
+
+    if is_user_member_of_community(user_id, community_name):
+        return jsonify({"is_member": True}), 200
+    else:
+        return jsonify({"is_member": False}), 200
