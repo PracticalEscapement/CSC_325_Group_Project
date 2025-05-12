@@ -267,6 +267,13 @@ def get_community(name):
     data_list.append(data)
     return jsonify(data_list)
 
+def is_user_member_of_community(user_id, community_name):
+    """
+    Check if a user is a member of a specific community.
+    """
+    membership = Member.query.filter_by(member_id=user_id, community_name=community_name).first()
+    return membership is not None
+
 def get_memebers(community_name):
     members=Member.query.filter_by(name=community_name).all()
     data_list=[]

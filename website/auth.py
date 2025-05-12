@@ -82,6 +82,8 @@ def login():
         
     user = User.query.filter_by(email=email).first()
 
+    print(user)
+
        
     if user and check_password_hash(user.password, password):
         # Generate JWT token
