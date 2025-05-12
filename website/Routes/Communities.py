@@ -39,11 +39,20 @@ def add_community(decoded_token):
         author_id=user_id  # Set the current user as the author
     )
 
+    new_membership = Member(
+    member_id=user_id,
+    community_name=name
+    )
+
     # Add to the database
     db.session.add(new_community)
     db.session.commit()
+    db.session.add(new_membership)
+    db.session.commit()
 
-    return jsonify({"message": "Community created successfully", "community": {
+    return jsonify({
+        "message": "Community created successfully", 
+        "community": {
         "name": new_community.name,
         "description": new_community.description,
         "imageUrl": new_community.image_url,
