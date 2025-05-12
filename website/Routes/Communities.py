@@ -104,7 +104,7 @@ def fetch_popular_communities():
         {
             "name": community.name,
             "description": community.description,
-            "imageUrl": community.image_url,  # Assuming you have an image_url field
+            "image_url": community.image_url,  # Assuming you have an image_url field
             "num_members": community.num_members
         }
         for community in communities
