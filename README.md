@@ -72,7 +72,7 @@
   </p>
   <p>
     <h4><b>Name</b>: Oscar Dejesus</h4>
-    <h4><b>Email</b>: dejeoj@farmingdale.edu</h4>  
+    <h4><b>Email</b>: oscar6dejesus@gmail.com</h4>  
   </p>
 </div>
 
