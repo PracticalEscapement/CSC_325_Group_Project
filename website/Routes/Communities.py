@@ -186,3 +186,33 @@ def check_membership(decoded_token, community_name):
         return jsonify({"is_member": True}), 200
     else:
         return jsonify({"is_member": False}), 200
+    
+
+# Fetch all communities that a user is not a member
+@community_routes.route('/api/communities/not_member', methods=['GET'])
+@token_required
+def fetch_communities_not_member(decoded_token):
+    """
+    API route to fetch all communities the current user is not a part of.
+    """
+    user_id = decoded_token.get('user_id')
+
+    # Subquery to find all community names the user is a member of
+    member_communities = db.session.query(Member.community_name).filter_by(member_id=user_id).subquery()
+
+    # Query to find all communities the user is not a part of
+    communities = Community.query.filter(~Community.name.in_(member_communities)).order_by(Community.num_members.desc()).limit(10).all()
+
+    # Format the response
+    data_list = [
+        {
+            "name": community.name,
+            "description": community.description,
+            "image_url": community.image_url,
+            "num_members": community.num_members,
+            "author_id": community.author_id
+        }
+        for community in communities
+    ]
+
+    return jsonify(data_list), 200
