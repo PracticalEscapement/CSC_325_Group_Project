@@ -63,22 +63,16 @@
 <div>
   <h2>Contact</h2>
   <p>
-    <ul>
-      <li><b>Name</b>: Olha Sorych</li>
-      <li><b>Email</b>: colaola20@gmail.com</li>
-    </ul>
+    <b>Name</b>: Olha Sorych
+    <b>Email</b>: colaola20@gmail.com
   </p>
-    <p>
-    <ul>
-      <li><b>Name</b>: Michael Moradi</li>
-      <li><b>Email</b>: michaelmoradi02@gmail.com</li>
-    </ul>
+  <p>
+    <b>Name</b>: Michael Moradi
+    <b>Email</b>: michaelmoradi02@gmail.com
   </p>
-      <p>
-    <ul>
-      <li><b>Name</b>: Oscar Dejesus</li>
-      <li><b>Email</b>: dejeoj@farmingdale.edu</li>
-    </ul>
+  <p>
+    <b>Name</b>: Oscar Dejesus
+    <b>Email</b>: dejeoj@farmingdale.edu
   </p>
 </div>
 
